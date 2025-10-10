@@ -25,11 +25,11 @@ GPS Insights: Simulates Catapult-style data to analyze high-speed runs and movem
 
 ## Demo
 To explore insights:
-🔗 Launch Demo (Insert Streamlit/ngrok URL after running main.ipynb)
+[See Demo](https://player-analytics.streamlit.app/)
 
 ## Key Features
 
-Synthetic Data: Simulates 2025 Broncos roster (~30 players, 10 games) with match stats (tackles, meters run, try assists) and GPS data (total distance, high-speed runs, max acceleration).
+Synthetic Data: Simulates 2025 Broncos roster (~30 players, 15 games) with match stats (tackles, meters run, try assists) and GPS data (total distance, high-speed runs, max acceleration).
 
 Models: Lightweight K-means, logistic regression, LSTM, and Genetic Algorithm, precomputed for fast demos.
 
