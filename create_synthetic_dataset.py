@@ -1,8 +1,18 @@
 import pandas as pd
 import numpy as np
 
-def create_synthetic_data():
-    """Generate synthetic match and GPS data for 2025 Broncos roster."""
+def create_synthetic_data(n_games=15, n_time_points=10, output_file='broncos_2025_stats.csv'):
+    """
+    Generate synthetic match and GPS data for 2025 Broncos roster with validation.
+
+    Args:
+        n_games (int): Number of games per player (default: 10).
+        n_time_points (int): Number of GPS time points per game (default: 10).
+        output_file (str): Path to save the main dataset CSV.
+
+    Returns:
+        tuple: (df_main, df_gps) - Main dataset and raw GPS dataset.
+    """
     # Full 2025 Broncos roster (~30 players)
     players = [
         'Reece Walsh', 'Payne Haas', 'Patrick Carrigan', 'Ezra Mam', 'Adam Reynolds',
@@ -19,9 +29,15 @@ def create_synthetic_data():
         'Second-row', 'Centre', 'Halfback', 'Prop', 'Fullback', 'Centre', 'Winger', 'Halfback'
     ]
 
-    # Synthetic main dataset (300 rows: ~30 players, 10 games each)
+    if n_games < 15:
+        print(f"Warning: n_games ({n_games}) is less than 15, may cause LSTM failure.")
+
+    if len(players) != len(positions):
+        raise ValueError("no. of players and positions must be the same")
+    
+    # Synthetic main dataset (300 rows: ~30 players, 15 games each)
     np.random.seed(42)
-    n_games = 10
+    # n_games = 15
     n_players = len(players)
     data = {
         'player': np.repeat(players, n_games),
@@ -39,18 +55,18 @@ def create_synthetic_data():
     for player in ['Reece Walsh', 'Payne Haas', 'Patrick Carrigan', 'Ezra Mam', 'Adam Reynolds']:
         mask = df_main['player'] == player
         if player == 'Reece Walsh':
-            df_main.loc[mask, 'meters_run'] *= 1.5
-            df_main.loc[mask, 'try_assists'] *= 1.5
+            df_main.loc[mask, 'meters_run'] = (df_main.loc[mask, 'meters_run'] * 1.5).clip(upper=300).astype('float32')
+            df_main.loc[mask, 'try_assists'] = (df_main.loc[mask, 'try_assists'] * 1.5).clip(upper=7).astype('float32')
         elif player == 'Payne Haas':
-            df_main.loc[mask, 'tackles'] *= 1.5
+            df_main.loc[mask, 'tackles'] = (df_main.loc[mask, 'tackles'] * 1.5).clip(upper=75).astype('float32')
         elif player == 'Patrick Carrigan':
-            df_main.loc[mask, 'tackles'] *= 1.2
-            df_main.loc[mask, 'meters_run'] *= 1.2
+            df_main.loc[mask, 'tackles'] = (df_main.loc[mask, 'tackles'] * 1.2).clip(upper=60).astype('float32')
+            df_main.loc[mask, 'meters_run'] = (df_main.loc[mask, 'meters_run'] * 1.2).clip(upper=240).astype('float32')
         elif player in ['Ezra Mam', 'Adam Reynolds']:
-            df_main.loc[mask, 'try_assists'] *= 1.3
+            df_main.loc[mask, 'try_assists'] = (df_main.loc[mask, 'try_assists'] * 1.3).clip(upper=6).astype('float32')
 
     # Simulate dummy GPS data (time-series: 10 time points per player per game, ~3000 rows total)
-    n_time_points = 10  
+    # n_time_points = 10  
     gps_data = {
         'player': np.repeat(df_main['player'], n_time_points),
         'game_date': np.repeat(df_main['game_date'], n_time_points),
@@ -69,7 +85,18 @@ def create_synthetic_data():
         max_acceleration=('acceleration', 'max')
     ).reset_index()
 
-    df_main = df_main.merge(gps_agg, on=['player', 'game_date'])
+    gps_agg['total_distance'] = gps_agg['total_distance'].astype('float32')
+    gps_agg['high_speed_runs'] = gps_agg['high_speed_runs'].astype('float32')
+    gps_agg['max_acceleration'] = gps_agg['max_acceleration'].astype('float32')
+
+    df_main = df_main.merge(gps_agg, on=['player', 'game_date'], how='left')
+
+#    Check for NaN values after merge
+    if df_main[['total_distance', 'high_speed_runs', 'max_acceleration']].isna().any().any():
+        print("Warning: NaN values introduced during merge. Filling with 0.")
+        df_main[['total_distance', 'high_speed_runs', 'max_acceleration']] = df_main[
+            ['total_distance', 'high_speed_runs', 'max_acceleration']
+        ].fillna(0).astype('float32')
 
     # Adjust GPS for key players based on stats (e.g., Walsh: high speed/distance; Haas: high acceleration in tackles)
     for player in ['Reece Walsh', 'Payne Haas']:
@@ -79,6 +106,27 @@ def create_synthetic_data():
             df_main.loc[mask, 'high_speed_runs'] *= 1.5
         elif player == 'Payne Haas':
             df_main.loc[mask, 'max_acceleration'] *= 1.3
+
+    # Validate data
+    numeric_columns = ['tackles', 'meters_run', 'try_assists', 'fatigue_score', 'injury_status',
+                      'total_distance', 'high_speed_runs', 'max_acceleration']
+    for col in numeric_columns:
+        if not pd.api.types.is_numeric_dtype(df_main[col]):
+            raise ValueError(f"Column '{col}' contains non-numeric data.")
+        if df_main[col].isna().any():
+            raise ValueError(f"Column '{col}' contains NaN values.")
+        if not df_main[col].dtype == 'float32':
+            df_main[col] = df_main[col].astype('float32')
+
+    categorical_columns = ['player', 'position']
+    for col in categorical_columns:
+        if not pd.api.types.is_string_dtype(df_main[col]):
+            df_main[col] = df_main[col].astype(str)
+
+    # Ensure sufficient data for LSTM (at least 15 records per player)
+    player_counts = df_main['player'].value_counts()
+    if (player_counts < 15).any():
+        raise ValueError(f"Some players have fewer than 15 records: {player_counts[player_counts < 10]}")
 
     df_main.to_csv('broncos_2025_stats.csv', index=False)
     df_gps.to_csv('broncos_gps_raw.csv', index=False)  

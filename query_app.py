@@ -3,7 +3,7 @@ import pandas as pd
 import plotly.express as px
 import pickle
 
-def run_query_app(data_file=data_file, gps_file=gps_file):
+def run_query_app(data_file, gps_file):
     """Run Streamlit app for querying Broncos insights."""
     st.title("AI Insights for Brisbane Broncos")
 
