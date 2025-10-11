@@ -48,7 +48,7 @@ def run_query_app(data_file, gps_file, sport=sport, user_type=user_type):
     questions = [
         "Who's at high injury risk in 2026?",
         "What's the optimal lineup for 2026?",
-        # "Who drives comebacks?",
+        "Who drives comebacks in NRL?",
         "Who has high GPS fatigue risk?",
         "Track young players' development" if user_type == 'pro' else "Who's the next rising star?",
         "Compare players across teams"
@@ -70,13 +70,13 @@ def run_query_app(data_file, gps_file, sport=sport, user_type=user_type):
         lineup_df = lineup_df.merge(data[['team', 'player', 'position']].drop_duplicates(), left_on='Player', right_on='player')
         st.dataframe(lineup_df[['team', 'Player', 'position']])
 
-    # elif question == "Who drives comebacks?":
-    #     st.subheader("Clutch Performers")
-    #     fig = px.scatter(data, x=config['metrics'][1], y=config['metrics'][0], color='performance_cluster',
-    #                      size=config['metrics'][2], text='player', title="Player Clusters: Clutch vs. Anchors",
-    #                      color_continuous_scale=['#F1AB00', '#C8305D', '#0066CC'])
-    #     fig.update_traces(textposition='top center')
-    #     st.plotly_chart(fig, use_container_width=True)
+    elif question == "Who drives comebacks in NRL?":
+        st.subheader("Clutch Performers")
+        fig = px.scatter(data, x=config['metrics'][1], y=config['metrics'][0], color='performance_cluster',
+                         size=config['metrics'][2], text='player', title="Player Clusters: Clutch vs. Anchors",
+                         color_continuous_scale=['#F1AB00', '#C8305D', '#0066CC'])
+        fig.update_traces(textposition='top center')
+        st.plotly_chart(fig, use_container_width=True)
 
     elif question == "Who has high GPS fatigue risk?":
         st.subheader("Players with High GPS Fatigue Risk")
