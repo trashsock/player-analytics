@@ -299,8 +299,7 @@ def run_query_app(data_file, gps_file):
     st.markdown("---")
     st.markdown(f"""
         <div style='text-align: center; color: {BRONCOS_GOLD}; padding: 15px;'>
-            <p style='font-size: 1em; font-weight: 600;'>Brisbane Broncos</p>
-            <p style='font-size: 0.8em;'>Powered by AI Analytics | Season 2026</p>
+            <p>Find me on <a href="https://www.linkedin.com/in/ritikagiridhar">LinkedIn</a>
         </div>
     """, unsafe_allow_html=True)
 
