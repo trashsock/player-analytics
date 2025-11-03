@@ -10,10 +10,6 @@ A platform that transforms how AFL and NRL teams identify talent, optimise perfo
 
 _The Player Development Tracker uses machine learning to predict breakout potential (80% accuracy) and recommend training (e.g., “Increase sprint drills for Player X”)._
 
-## Live Demo
-🔗 [Launch Demo](https://player-analytics.streamlit.app)
-
-See the app in action: Analyse injury risks, optimise lineups, track young talent, and compare players across teams.
 
 ## Key Features
 
